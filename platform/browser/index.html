@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="main">
+        <input id="path" placeholder="请填地址" />
+    </div>
+    <button id="start">开始</button>
+    <button id="plays">播放</button>
+    <script type="module">
+        import {done} from './dist/browser.js'
+
+        let intervalId = 0
+
+        const audioContext = new AudioContext();
+        async function play() {
+            const  res = await fetch('./source/小说更新了.mp3');
+            const arraybuffer = await res.arrayBuffer();
+            const audioBuffer = await audioContext.decodeAudioData(arraybuffer);
+            const source = audioContext.createBufferSource();
+            source.connect(audioContext.destination); //连接上实例
+            source.buffer = audioBuffer;
+            source.start();
+        }
+
+        plays.addEventListener("click", play, false)
+
+        let pathlocal = localStorage.getItem("path")
+        if(pathlocal) {
+            path.value = pathlocal
+        }
+
+        async function refresh() {
+            let db = localStorage.getItem("lastest")
+            let msg = await done(path.value)
+            if(!db) {
+                let lastest = [
+                    {
+                        date: new Date().valueOf(),
+                        title: msg
+                    }
+                ]
+                localStorage.setItem("lastest", JSON.stringify(lastest))
+                let div = document.createElement("div")
+                div.innerHTML = msg
+                main.appendChild(div)
+            } else {
+                let lastest = JSON.parse(db)
+                let top = lastest[lastest.length - 1]
+                if(top.title !== msg) {
+                    console.log("更新了！")
+                    lastest.push({
+                        date: new Date().valueOf(),
+                        title: msg
+                    })
+                    localStorage.setItem("lastest", JSON.stringify(lastest))
+                    plays.click()
+                }
+                let div = document.createElement("div")
+                div.innerHTML = msg
+                main.appendChild(div)
+
+
+                // console.log(frame)
+                // let audio = frame.contentDocument.querySelector("audio")
+                // console.log(audio)
+                // audio.play()
+            }
+        }
+
+        // void async function () {
+        //     await refresh()
+        // }()
+
+        start.addEventListener("click", async () => {
+            localStorage.setItem("path", path.value)
+            clearInterval(intervalId)
+            await refresh()
+            let time = 1000 * 60 * 2 // 10分钟一次
+            // let time = 1000 * 10
+            intervalId = setInterval(async () => {
+                await refresh()
+            }, time)
+        })
+    </script>
+</body>
+</html>
